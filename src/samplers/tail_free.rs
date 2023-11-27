@@ -49,7 +49,7 @@ impl Sampler for SampleTailFree {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         use std::ops::ControlFlow::*;
 
         let Self { z, min_keep } = *self;
@@ -58,7 +58,9 @@ impl Sampler for SampleTailFree {
             return Ok(logits);
         }
 
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax: {}", e.to_string()))
+        })?;
 
         let mut fderivs = logits
             .iter()

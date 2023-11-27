@@ -37,6 +37,10 @@ pub enum SamplerError {
     #[error("rand weights error: {0}")]
     /// RNG weights-related errors
     RandWeightedError(rand::distributions::WeightedError),
+
+    #[error("Interrupted Sampler")]
+    /// Interrupted sampler
+    Interrupted,
 }
 
 #[derive(Debug, Clone, Error)]
@@ -54,6 +58,12 @@ pub enum LogitsError {
 impl From<LogitsError> for SamplerError {
     fn from(value: LogitsError) -> Self {
         SamplerError::LogitsError(value)
+    }
+}
+
+impl From<anyhow::Error> for SamplerError {
+    fn from(value: anyhow::Error) -> Self {
+        SamplerError::InternalError(value.to_string())
     }
 }
 
@@ -238,7 +248,7 @@ impl Logits {
         &mut self,
         res: &mut dyn HasSamplerResources,
         sampler: &mut S,
-    ) -> Result<&mut Self> {
+    ) -> Result<&mut Self, SamplerError> {
         sampler.sample(res, self)
     }
 
@@ -247,19 +257,22 @@ impl Logits {
         &mut self,
         res: &mut dyn HasSamplerResources,
         sampler: &mut S,
-    ) -> Result<Option<TID>> {
+    ) -> Result<Option<TID>, SamplerError> {
         sampler.sample_token(res, self)
     }
 }
 
 /// The main sampler trait.
 pub trait Sampler: Debug + Send + Sync {
+    /// Returns a string to prepend to the input before sampling.
+    fn sample_prepend(&self, _res: &mut dyn HasSamplerResources) {}
+
     /// Runs the [Sampler]. Depending on the type of [Sampler], this may produce a token id.
     fn sample<'a>(
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> Result<&'a mut Logits>;
+    ) -> Result<&'a mut Logits, SamplerError>;
 
     /// Returns the last sampled token id if available.
     ///
@@ -276,7 +289,7 @@ pub trait Sampler: Debug + Send + Sync {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &mut Logits,
-    ) -> Result<Option<TID>> {
+    ) -> Result<Option<TID>, SamplerError> {
         let _ = self.sample(res, logits)?;
         Ok(self.sampled_token_id())
     }
@@ -291,7 +304,7 @@ impl Sampler for Box<dyn Sampler> {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &mut Logits,
-    ) -> Result<Option<TID>> {
+    ) -> Result<Option<TID>, SamplerError> {
         (**self).sample_token(res, logits)
     }
 
@@ -299,7 +312,7 @@ impl Sampler for Box<dyn Sampler> {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> Result<&'a mut Logits> {
+    ) -> Result<&'a mut Logits, SamplerError> {
         (**self).sample(res, logits)
     }
 }
@@ -313,7 +326,7 @@ impl Sampler for Arc<Mutex<dyn Sampler>> {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &mut Logits,
-    ) -> Result<Option<TID>> {
+    ) -> Result<Option<TID>, SamplerError> {
         self.lock()
             .map_err(|e| SamplerError::InternalError(format!("Couldn't acquire lock: {e}")))?
             .sample_token(res, logits)
@@ -323,7 +336,7 @@ impl Sampler for Arc<Mutex<dyn Sampler>> {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> Result<&'a mut Logits> {
+    ) -> Result<&'a mut Logits, SamplerError> {
         self.lock()
             .map_err(|e| SamplerError::InternalError(format!("Couldn't acquire lock: {e}")))?
             .sample(res, logits)

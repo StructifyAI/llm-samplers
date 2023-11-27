@@ -55,7 +55,7 @@ impl Sampler for SampleRepetition {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let Self {
             repetition_penalty,
             last_n,

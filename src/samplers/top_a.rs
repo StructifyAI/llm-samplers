@@ -58,13 +58,15 @@ impl Sampler for SampleTopA {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let Self { a1, a2, min_keep } = *self;
         if logits.is_empty() || a1 == 0.0 || a2 == 0.0 {
             return Ok(logits);
         }
 
-        logits.ensure_softmax()?;
+        logits
+            .ensure_softmax()
+            .map_err(|e| SamplerError::InternalError(format!("Failed to ensure softmax: {}", e)))?;
 
         if logits.len() <= min_keep {
             return Ok(logits);

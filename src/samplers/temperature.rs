@@ -37,7 +37,7 @@ impl Sampler for SampleTemperature {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let temp = self.temperature;
         if temp != 0f32 {
             logits.iter_mut().for_each(|l| l.logit /= temp);

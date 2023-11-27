@@ -33,12 +33,14 @@ impl Sampler for SampleRandDistrib {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         self.token_id = None;
         if logits.is_empty() {
             return Ok(logits);
         }
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax before sampling: {}", e))
+        })?;
         let dist = WeightedIndex::new(logits.iter().map(|l| l.prob))
             .map_err(SamplerError::RandWeightedError)?;
         res.with_rng_mut(&mut |r| {

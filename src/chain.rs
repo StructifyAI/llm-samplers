@@ -3,7 +3,7 @@ use std::{
     ops::{Add, AddAssign},
 };
 
-use crate::types::{HasSamplerResources, Logits, Sampler, TID};
+use crate::{types::{HasSamplerResources, Logits, Sampler, TID}, prelude::SamplerError};
 
 #[derive(Default, Debug)]
 /// A list of [Sampler]s that can be run in sequence. It implements `Sampler`
@@ -31,11 +31,18 @@ impl SamplerChain {
 }
 
 impl Sampler for SamplerChain {
+    /// Returns a string to prepend to the input before sampling.
+    fn sample_prepend(&self, res: &mut dyn HasSamplerResources) {
+        self.samplers.iter().for_each(|sampler| {
+            sampler.sample_prepend(res);
+        });
+    }
+
     fn sample<'a>(
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         self.token = None;
         self.samplers
             .iter_mut()

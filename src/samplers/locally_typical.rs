@@ -55,12 +55,17 @@ impl Sampler for SampleLocallyTypical {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         use std::ops::ControlFlow::*;
 
         let Self { p, min_keep } = *self;
         let min_keep = if min_keep == 0 { 0 } else { min_keep - 1 };
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!(
+                "Failed to ensure softmax before sampling: {}",
+                e
+            ))
+        })?;
 
         let ent = logits
             .iter()

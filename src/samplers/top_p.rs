@@ -47,11 +47,13 @@ impl Sampler for SampleTopP {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         use std::ops::ControlFlow::*;
 
         let Self { p, min_keep } = *self;
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax before sampling: {}", e))
+        })?;
 
         let mut cum_sum = 0f32;
         let last_idx =

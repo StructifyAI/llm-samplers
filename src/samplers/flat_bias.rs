@@ -48,7 +48,7 @@ impl Sampler for SampleFlatBias {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let bi = self.bias.iter();
         let mut changed = 0;
 

@@ -43,9 +43,11 @@ impl Sampler for SampleTopK {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let k = self.k.max(self.min_keep).min(logits.len());
-        logits.ensure_sorted()?;
+        logits.ensure_sorted().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure sorted: {}", e.to_string()))
+        })?;
         if k != logits.len() {
             logits.truncate(k);
             logits.set_softmax(false);

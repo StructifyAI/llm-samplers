@@ -200,7 +200,7 @@ impl Sampler for SampleSeqRepetition {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let Self {
             last_n,
             min_length,

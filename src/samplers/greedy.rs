@@ -36,7 +36,7 @@ impl Sampler for SampleGreedy {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         if logits.is_empty() {
             self.token_id = None;
             return Ok(logits);

@@ -13,7 +13,7 @@ pub trait HasSamplerResources: Debug {
     }
 
     /// Allows a sampler to immutably access the last tokens (if present).
-    fn with_last_tokens(&self, _fun: &mut dyn FnMut(&[TID])) -> Result<(), SamplerError> {
+    fn with_last_tokens(&self, _fun: &mut dyn FnMut(&Vec<TID>)) -> Result<(), SamplerError> {
         Err(SamplerError::MissingResource("last_tokens".to_string()))
     }
 
@@ -80,7 +80,7 @@ impl HasSamplerResources for SimpleSamplerResources {
         )
     }
 
-    fn with_last_tokens(&self, fun: &mut dyn FnMut(&[TID])) -> Result<(), SamplerError> {
+    fn with_last_tokens(&self, fun: &mut dyn FnMut(&Vec<TID>)) -> Result<(), SamplerError> {
         self.last_tokens.as_ref().map_or_else(
             || Err(SamplerError::MissingResource("last_tokens".to_string())),
             |lt| {

@@ -103,7 +103,7 @@ impl Sampler for SampleMirostat1 {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let Self {
             n_vocab,
             tau,
@@ -123,7 +123,9 @@ impl Sampler for SampleMirostat1 {
         }
         let n_vocab = n_vocab as L;
 
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax before sampling: {}", e))
+        })?;
         let (sum_ti_bi, sum_ti_sq) = {
             let mut idx = 0f32;
             logits
@@ -309,7 +311,7 @@ impl Sampler for SampleMirostat2 {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         self.token = None;
         if logits.is_empty() {
             return Ok(logits);
@@ -317,7 +319,9 @@ impl Sampler for SampleMirostat2 {
 
         let Self { tau, eta, mu, .. } = *self;
 
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax before sampling: {}", e))
+        })?;
         let new_size = logits
             .iter()
             .enumerate()
@@ -328,7 +332,9 @@ impl Sampler for SampleMirostat2 {
             logits.truncate(new_size);
             logits.set_softmax(false);
         }
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax before sampling: {}", e))
+        })?;
 
         if let Some(tid) = self.rd_sampler.sample_token(res, logits)? {
             let logit = logits.iter().find(|l| l.token_id == tid).ok_or_else(|| {

@@ -52,13 +52,15 @@ impl Sampler for SampleMinP {
         &mut self,
         _res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let Self { p, min_keep } = *self;
         if p == 0f32 || logits.is_empty() {
             return Ok(logits);
         }
 
-        logits.ensure_softmax()?;
+        logits.ensure_softmax().map_err(|e| {
+            SamplerError::InternalError(format!("Failed to ensure softmax before sampling: {}", e))
+        })?;
 
         if logits.len() <= min_keep {
             return Ok(logits);

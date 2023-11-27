@@ -48,7 +48,7 @@ impl<UI, F> Sampler for Box<dyn BuildableSampler<UI, F>> {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &mut Logits,
-    ) -> Result<Option<TID>> {
+    ) -> Result<Option<TID>, SamplerError> {
         (**self).sample_token(res, logits)
     }
 
@@ -56,7 +56,7 @@ impl<UI, F> Sampler for Box<dyn BuildableSampler<UI, F>> {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> Result<&'a mut Logits> {
+    ) -> Result<&'a mut Logits, SamplerError> {
         (**self).sample(res, logits)
     }
 }

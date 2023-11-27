@@ -65,7 +65,7 @@ impl Sampler for SampleFreqPresence {
         &mut self,
         res: &mut dyn HasSamplerResources,
         logits: &'a mut Logits,
-    ) -> anyhow::Result<&'a mut Logits> {
+    ) -> anyhow::Result<&'a mut Logits, SamplerError> {
         let Self {
             frequency_penalty,
             presence_penalty,
