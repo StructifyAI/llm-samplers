@@ -40,7 +40,7 @@ pub enum SamplerError {
 
     #[error("Interrupted Sampler")]
     /// Interrupted sampler
-    Interrupted,
+    Interrupted(Vec<u32>),
 }
 
 #[derive(Debug, Clone, Error)]
