@@ -1,5 +1,5 @@
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display, Formatter},
     ops::{Deref, DerefMut},
     sync::{Arc, Mutex},
 };
@@ -14,6 +14,25 @@ pub type TID = u32;
 
 /// Type for logits.
 pub type L = f32;
+
+#[derive(Debug, Error, Clone)]
+pub enum Interruption {
+    NewTokensGvien(Vec<u32>),
+
+    // /// The token given is the one that caused the interruption.
+    // ToolCall(Logit),
+}
+
+impl Display for Interruption {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Interruption::NewTokensGvien(tokens) => {
+                write!(f, "New tokens given: {:?}", tokens)
+            }
+            // Interruption::ToolCall(token) => write!(f, "Tool call: {}", token.token_id),
+        }
+    }
+}
 
 #[derive(Debug, Error)]
 /// Sampler errors
@@ -40,7 +59,7 @@ pub enum SamplerError {
 
     #[error("Interrupted Sampler")]
     /// Interrupted sampler
-    Interrupted(Vec<u32>),
+    Interrupted(Interruption),
 }
 
 #[derive(Debug, Clone, Error)]
