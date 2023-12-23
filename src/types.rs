@@ -60,6 +60,10 @@ pub enum SamplerError {
     #[error("Interrupted Sampler")]
     /// Interrupted sampler
     Interrupted(Interruption),
+
+    #[error("No valid tokens")]
+    /// No valid tokens
+    NoValidTokens,
 }
 
 #[derive(Debug, Clone, Error)]
